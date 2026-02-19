@@ -10,13 +10,16 @@
 
 #include "stm32f7xx_hal.h"
 #include <string.h>
+#include <stdio.h>
+#include "cycles.h"
+#include "crypto_harness.h"
 
 /* ------------------------------------------------------------------
  * Private function prototypes
  * ----------------------------------------------------------------*/
 static void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_USART1_UART_Init(void);
+static void MX_USART1_UART_Init(UART_HandleTypeDef *huart);
 static void Error_Handler(void);
 
 /* ------------------------------------------------------------------
@@ -35,18 +38,21 @@ int main(void)
 
     /* Initialize peripherals -----------------------------------*/
     MX_GPIO_Init();
-    MX_USART1_UART_Init();
+    MX_USART1_UART_Init(&huart1);
+
+    cycles_init();
 
     /* Transmit hello message -----------------------------------*/
-    const char *msg = "PQC Demo: Environment Setup Successful\r\n";
-    HAL_UART_Transmit(&huart1, (uint8_t *)msg, strlen(msg), 1000);
+    char msg[128];
+    sprintf(msg, "\r\n--- PQC Demo: Milestone 1 Execution ---\r\n");
+    HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 1000);
 
     /* Main loop ------------------------------------------------*/
-    while (1)
-    {
-        HAL_Delay(1000);
-        const char *heartbeat = "PQC Demo: Running...\r\n";
-        HAL_UART_Transmit(&huart1, (uint8_t *)heartbeat, strlen(heartbeat), 1000);
+    while (1) {
+        benchmark_rsa();
+        benchmark_pqc();
+        
+        HAL_Delay(5000); // 5 second pause between benchmark runs
     }
 }
 
@@ -123,19 +129,19 @@ static void MX_GPIO_Init(void)
  * MX_USART1_UART_Init
  * USART1 @ 115200-8N1 (connected to ST-Link VCP on F769I-DISCO)
  * ----------------------------------------------------------------*/
-static void MX_USART1_UART_Init(void)
+static void MX_USART1_UART_Init(UART_HandleTypeDef *huart)
 {
     __HAL_RCC_USART1_CLK_ENABLE();
 
-    huart1.Instance          = USART1;
-    huart1.Init.BaudRate     = 115200;
-    huart1.Init.WordLength   = UART_WORDLENGTH_8B;
-    huart1.Init.StopBits     = UART_STOPBITS_1;
-    huart1.Init.Parity       = UART_PARITY_NONE;
-    huart1.Init.Mode         = UART_MODE_TX_RX;
-    huart1.Init.HwFlowCtl    = UART_HWCONTROL_NONE;
-    huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-    if (HAL_UART_Init(&huart1) != HAL_OK) { Error_Handler(); }
+    huart->Instance          = USART1;
+    huart->Init.BaudRate     = 115200;
+    huart->Init.WordLength   = UART_WORDLENGTH_8B;
+    huart->Init.StopBits     = UART_STOPBITS_1;
+    huart->Init.Parity       = UART_PARITY_NONE;
+    huart->Init.Mode         = UART_MODE_TX_RX;
+    huart->Init.HwFlowCtl    = UART_HWCONTROL_NONE;
+    huart->Init.OverSampling = UART_OVERSAMPLING_16;
+    if (HAL_UART_Init(huart) != HAL_OK) { Error_Handler(); }
 }
 
 /* ------------------------------------------------------------------

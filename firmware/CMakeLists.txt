@@ -15,25 +15,42 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Include Directories
 include_directories(
-    "Core/Inc"
-    "deps/CMSIS/Device/ST/STM32F7xx/Include"
-    "deps/CMSIS/Include"
-    "deps/STM32F7xx_HAL_Driver/Inc"
-    # Legacy path is handled by file structure fix
+    .
+    Core/Inc
+    RSA/Inc
+    deps/STM32F7xx_HAL_Driver/Inc
+    deps/STM32F7xx_HAL_Driver/Inc/Legacy
+    deps/CMSIS/Device/ST/STM32F7xx/Include
+    deps/CMSIS/Include
+    # Milestone 1: PQC Deps
+    deps/PQClean/common
+    deps/PQClean/crypto_sign/ml-dsa-44/clean
+    deps/PQClean/crypto_kem/ml-kem-512/clean
 )
 
 # Source Files
-file(GLOB_RECURSE SRC_FILES 
-    "Core/Src/*.c"
+file(GLOB_RECURSE SOURCES 
+    "Core/Src/*.c" 
     "Core/Src/*.s"
+    "RSA/Src/*.c"
     "deps/STM32F7xx_HAL_Driver/Src/*.c"
+    # PQClean algorithm specific files
+    "deps/PQClean/crypto_sign/ml-dsa-44/clean/*.c"
+    "deps/PQClean/crypto_kem/ml-kem-512/clean/*.c"
 )
 
-# Exclude template files from build
-list(FILTER SRC_FILES EXCLUDE REGEX ".*_template.c$")
+# PQClean: Pick only non-SIMD common files
+file(GLOB PQ_COMMON "deps/PQClean/common/*.c")
+list(REMOVE_ITEM PQ_COMMON "${CMAKE_CURRENT_SOURCE_DIR}/deps/PQClean/common/randombytes.c")
+list(APPEND SOURCES ${PQ_COMMON})
+
+# Exclude template files and SIMD files from build
+list(FILTER SOURCES EXCLUDE REGEX ".*_template.c$")
+list(FILTER SOURCES EXCLUDE REGEX ".*times4.*")
+list(FILTER SOURCES EXCLUDE REGEX ".*keccak2x.*")
 
 # Executable
-add_executable(${PROJECT_NAME}.elf ${SRC_FILES})
+add_executable(${PROJECT_NAME}.elf ${SOURCES})
 
 # Compiler Flags (Generic)
 target_compile_options(${PROJECT_NAME}.elf PRIVATE
