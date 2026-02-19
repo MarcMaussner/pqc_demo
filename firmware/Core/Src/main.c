@@ -48,11 +48,40 @@ int main(void)
     HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 1000);
 
     /* Main loop ------------------------------------------------*/
+    uint8_t rx_buf[1];
+    char *menu = "\r\n--- PQC Demo Menu ---\r\n"
+                 "1. Run RSA Benchmark\r\n"
+                 "2. Run PQC Benchmark\r\n"
+                 "3. Run All\r\n"
+                 "Select option: ";
+
+    HAL_UART_Transmit(&huart1, (uint8_t*)menu, strlen(menu), 1000);
+
     while (1) {
-        benchmark_rsa();
-        benchmark_pqc();
-        
-        HAL_Delay(5000); // 5 second pause between benchmark runs
+        /* Check for input with timeout to allow other processing if needed */
+        if (HAL_UART_Receive(&huart1, rx_buf, 1, 100) == HAL_OK) {
+            /* Echo character */
+            HAL_UART_Transmit(&huart1, rx_buf, 1, 10);
+            HAL_UART_Transmit(&huart1, (uint8_t*)"\r\nExecution Start...\r\n", 20, 100);
+
+            switch(rx_buf[0]) {
+                case '1': 
+                    benchmark_rsa(); 
+                    break;
+                case '2': 
+                    benchmark_pqc(); 
+                    break;
+                case '3': 
+                    benchmark_rsa(); 
+                    benchmark_pqc(); 
+                    break;
+                default: 
+                    HAL_UART_Transmit(&huart1, (uint8_t*)"Invalid option\r\n", 16, 100); 
+                    break;
+            }
+            /* Reprint menu */
+            HAL_UART_Transmit(&huart1, (uint8_t*)menu, strlen(menu), 1000);
+        }
     }
 }
 

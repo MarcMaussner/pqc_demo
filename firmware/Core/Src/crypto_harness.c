@@ -6,8 +6,8 @@
 #include <string.h>
 
 /* Crypto includes */
-#include "rsa.h"
-#include "bigint.h"
+#include "mbedtls/rsa.h"
+#include "mbedtls/platform.h"
 
 // PQC Prototypes
 #include "deps/PQClean/crypto_sign/ml-dsa-44/clean/api.h"
@@ -17,8 +17,7 @@
 
 extern UART_HandleTypeDef huart1;
 
-/* Static buffers to avoid stack overflow for very large items.
-   SPHINCS+ signature is ~7.8KB, so we need larger buffers. */
+/* Static buffers to avoid stack overflow for very large items. */
 static uint8_t pk[8192];
 static uint8_t sk[8192];
 static uint8_t sig[8192];
@@ -29,28 +28,49 @@ static uint8_t ss2[128];
 void benchmark_rsa(void) {
     uint32_t start, end;
     size_t stack_used;
-    BigInt n, e, m, r;
     char buf[128];
+    mbedtls_rsa_context rsa;
+    unsigned char input[256];
+    unsigned char output[256];
     
-    sprintf(buf, "\r\n--- RSA-2048 (Classical Baseline) ---\r\n");
+    sprintf(buf, "\r\n--- RSA-2048 (mbedTLS Baseline) ---\r\n");
     HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
 
-    bi_set_uint32(&n, 0xABCDEF01);
-    bi_set_uint32(&e, 65537);
-    bi_set_uint32(&m, 0x12345678);
+    mbedtls_rsa_init(&rsa);
+    
+    /* Set padding mode using public API */
+    mbedtls_rsa_set_padding(&rsa, MBEDTLS_RSA_PKCS_V15, MBEDTLS_MD_SHA256);
 
-    sprintf(buf, "UART >> RSA: Starting Public Op...\r\n");
+    /* Setup a dummy but valid size 2048-bit key */
+    mbedtls_mpi N, E;
+    mbedtls_mpi_init(&N);
+    mbedtls_mpi_init(&E);
+    mbedtls_mpi_lset(&E, 65537);
+    mbedtls_mpi_lset(&N, 1);
+    mbedtls_mpi_shift_l(&N, 2047); // Rough approximation of a 2048-bit N
+
+    mbedtls_rsa_import(&rsa, &N, NULL, NULL, NULL, &E);
+    mbedtls_rsa_complete(&rsa);
+
+    memset(input, 0xAA, sizeof(input));
+    input[0] = 0; // Ensure input < N
+
+    sprintf(buf, "UART >> RSA: Starting Public Op (mbedTLS)...\r\n");
     HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
 
     stack_watermark_init();
     cycles_reset();
     start = cycles_get();
-    rsa_public_op(&r, &m, &e, &n);
+    mbedtls_rsa_public(&rsa, input, output);
     end = cycles_get();
     stack_used = stack_watermark_get_usage();
 
     sprintf(buf, "UART >> RSA: Public Op took %lu cycles, Stack: %u bytes\r\n", end - start, (unsigned int)stack_used);
     HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
+
+    mbedtls_rsa_free(&rsa);
+    mbedtls_mpi_free(&N);
+    mbedtls_mpi_free(&E);
 }
 
 void benchmark_pqc(void) {

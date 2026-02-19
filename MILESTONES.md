@@ -67,3 +67,26 @@
 
 **Success Criteria:** ✅ MET
 - A single command runs the full benchmark suite, downloads results, and compiles a PDF comparing Cycle Count, Stack Usage, and ROM Size.
+
+---
+
+## [M3] Final Reporting & Deployment
+**Goal:** Transition from data collection to high-quality presentation and final project solidification.
+- [ ] **Improve Implementation**:
+    - [ ] Add Kyber for KEM comparison (vs. RSA/ECC)
+    - [ ] Ensure to take official RSA algorithm (mbedtls, openssl)
+    - [ ] Standalone script to run all benchmarks and generate report (with output of run sections)
+- [ ] **Advanced Visualization**:
+    - [ ] Generate comparative plots for Cycles and Stack usage.
+    - [ ] Create security-level vs. performance trade-off charts.
+- [ ] **Resource Analysis**:
+    - [ ] Automate Flash/SRAM footprint measurement per algorithm.
+    - [ ] Analyze overhead of PQClean vs. hardware-optimized versions (if applicable).
+- [ ] **Final Deliverables**:
+    - [ ] `docs/FINAL_REPORT.md` including all visualizations and analysis.
+    - [ ] "Demo Mode" in firmware for interactiveSuite selection.
+    - [ ] Final project tagging (`v1.0.0`).
+
+**Success Criteria:**
+- Professional-grade PDF/Markdown report generated automatically from hardware logs.
+- Full footprint analysis (ROM/SRAM) documented for all 5 candidates.

@@ -28,6 +28,8 @@ include_directories(
     deps/PQClean/crypto_kem/ml-kem-512/clean
     deps/PQClean/crypto_sign/falcon-512/clean
     deps/PQClean/crypto_sign/sphincs-sha2-128s-simple/clean
+    # Milestone 3: mbedTLS
+    deps/mbedtls/include
 )
 
 # Source Files
@@ -41,6 +43,19 @@ file(GLOB_RECURSE SOURCES
     "deps/PQClean/crypto_kem/ml-kem-512/clean/*.c"
     "deps/PQClean/crypto_sign/falcon-512/clean/*.c"
     "deps/PQClean/crypto_sign/sphincs-sha2-128s-simple/clean/*.c"
+    # mbedTLS RSA core files
+    "deps/mbedtls/library/rsa.c"
+    "deps/mbedtls/library/rsa_alt_helpers.c"
+    "deps/mbedtls/library/bignum.c"
+    "deps/mbedtls/library/bignum_core.c"
+    "deps/mbedtls/library/platform.c"
+    "deps/mbedtls/library/platform_util.c"
+    "deps/mbedtls/library/constant_time.c"
+    "deps/mbedtls/library/md.c"
+    "deps/mbedtls/library/sha256.c"
+    "deps/mbedtls/library/oid.c"
+    "deps/mbedtls/library/asn1parse.c"
+    "deps/mbedtls/library/asn1write.c"
 )
 
 # PQClean: Pick only non-SIMD common files
@@ -57,6 +72,8 @@ list(FILTER SOURCES EXCLUDE REGEX ".*keccak2x.*")
 add_executable(${PROJECT_NAME}.elf ${SOURCES})
 
 # Compiler Flags (Generic)
+# MBEDTLS_CONFIG_FILE is handled via include path order (Core/Inc/mbedtls/mbedtls_config.h)
+
 target_compile_options(${PROJECT_NAME}.elf PRIVATE
     -mcpu=cortex-m7
     -mthumb
@@ -73,6 +90,7 @@ target_link_options(${PROJECT_NAME}.elf PRIVATE
     -mfpu=fpv5-d16
     -mfloat-abi=hard
     -T${CMAKE_CURRENT_SOURCE_DIR}/STM32F769NIHx_FLASH.ld
+    -Wl,-Map=${PROJECT_NAME}.map,--cref
     -Wl,--gc-sections
     --specs=nano.specs
     -lc -lm -lnosys
