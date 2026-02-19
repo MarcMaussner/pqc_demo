@@ -26,6 +26,8 @@ include_directories(
     deps/PQClean/common
     deps/PQClean/crypto_sign/ml-dsa-44/clean
     deps/PQClean/crypto_kem/ml-kem-512/clean
+    deps/PQClean/crypto_sign/falcon-512/clean
+    deps/PQClean/crypto_sign/sphincs-sha2-128s-simple/clean
 )
 
 # Source Files
@@ -37,6 +39,8 @@ file(GLOB_RECURSE SOURCES
     # PQClean algorithm specific files
     "deps/PQClean/crypto_sign/ml-dsa-44/clean/*.c"
     "deps/PQClean/crypto_kem/ml-kem-512/clean/*.c"
+    "deps/PQClean/crypto_sign/falcon-512/clean/*.c"
+    "deps/PQClean/crypto_sign/sphincs-sha2-128s-simple/clean/*.c"
 )
 
 # PQClean: Pick only non-SIMD common files

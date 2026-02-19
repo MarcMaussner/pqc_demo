@@ -1,3 +1,7 @@
+param (
+    [int]$DurationSeconds = 10
+)
+
 # Read UART output from STM32 via ST-Link VCP
 $portName = "COM5"
 $baudRate = 115200
@@ -8,16 +12,17 @@ $port = New-Object System.IO.Ports.SerialPort($portName, $baudRate, [System.IO.P
 $port.ReadTimeout = $timeout
 $port.Open()
 
-Write-Host "Listening for data (5 seconds)..."
+Write-Host "Listening for data ($DurationSeconds seconds)..."
 try {
-    $deadline = [DateTime]::Now.AddSeconds(5)
+    $deadline = [DateTime]::Now.AddSeconds($DurationSeconds)
     while ([DateTime]::Now -lt $deadline) {
         try {
             $line = $port.ReadLine()
             Write-Host "UART >> $line"
         }
         catch [System.TimeoutException] {
-            break
+            # Continue listening until deadline is reached
+            continue
         }
     }
 }

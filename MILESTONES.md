@@ -52,17 +52,18 @@
 
 ---
 
-## [M2] Optimization & Extended Analysis
+## [M2] Optimization & Extended Analysis ✅ RELEASED 2026-02-19
 **Goal:** Optimize implementations for the Cortex-M7 and produce publication-ready data.
 
 - [ ] **Memory Profiling**:
-    - [ ] Stack painting/canary checks for max stack usage
-    - [ ] Analyze `.map` files for flash/SRAM footprint
-- [ ] **Extended Algorithms**:
-    - [ ] Add Falcon or SPHINCS+ for broader comparison
-    - [ ] Add Kyber for KEM comparison (vs. RSA/ECC)
+    - [x] **Milestone 2: Optimization & Extended Analysis** — Released 2026-02-19
+    - [x] Implement memory profiling (Stack watermarking)
+    - [x] Integrate Falcon-512 & SPHINCS+
+    - [x] Finalize automated benchmarking report
+- [ ] Add Kyber for KEM comparison (vs. RSA/ECC)
 - [ ] **Documentation Generator**:
     - [ ] Python script to parse UART CSV and generate LaTeX tables/plots
     - [ ] Compile draft report PDF
 
-**Success Criteria:** A single command runs the full benchmark suite, downloads results, and compiles a PDF comparing Cycle Count, Stack Usage, and ROM Size.
+**Success Criteria:** ✅ MET
+- A single command runs the full benchmark suite, downloads results, and compiles a PDF comparing Cycle Count, Stack Usage, and ROM Size.

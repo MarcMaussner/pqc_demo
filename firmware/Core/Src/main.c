@@ -44,7 +44,7 @@ int main(void)
 
     /* Transmit hello message -----------------------------------*/
     char msg[128];
-    sprintf(msg, "\r\n--- PQC Demo: Milestone 1 Execution ---\r\n");
+    sprintf(msg, "\r\n--- PQC Demo: Milestone 2 Execution ---\r\n");
     HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 1000);
 
     /* Main loop ------------------------------------------------*/
