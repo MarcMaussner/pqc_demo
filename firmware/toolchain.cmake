@@ -1,0 +1,29 @@
+set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_SYSTEM_PROCESSOR arm)
+
+# Resolve project root and use forward slashes
+get_filename_component(PROJECT_ROOT_RAW "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
+file(TO_CMAKE_PATH "${PROJECT_ROOT_RAW}" PROJECT_ROOT)
+
+set(COMPILER_BIN_DIR "${PROJECT_ROOT}/tools/arm-none-eabi/bin")
+
+set(CMAKE_C_COMPILER "${COMPILER_BIN_DIR}/arm-none-eabi-gcc.exe")
+set(CMAKE_ASM_COMPILER "${COMPILER_BIN_DIR}/arm-none-eabi-gcc.exe")
+set(CMAKE_OBJCOPY "${COMPILER_BIN_DIR}/arm-none-eabi-objcopy.exe")
+set(CMAKE_SIZE "${COMPILER_BIN_DIR}/arm-none-eabi-size.exe")
+
+# FORCE compiler identity to skip problematic detection
+set(CMAKE_C_COMPILER_ID "GNU")
+set(CMAKE_C_COMPILER_ID_RUN 1)
+set(CMAKE_C_COMPILER_FORCED 1)
+set(CMAKE_C_COMPILER_WORKS 1)
+
+set(CMAKE_ASM_COMPILER_ID "GNU")
+set(CMAKE_ASM_COMPILER_ID_RUN 1)
+set(CMAKE_ASM_COMPILER_FORCED 1)
+set(CMAKE_ASM_COMPILER_WORKS 1)
+
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+ 

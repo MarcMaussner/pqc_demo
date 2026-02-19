@@ -1,0 +1,7 @@
+# .dockerignore
+agentic-ai-team
+.git
+.vs
+build
+tools
+pqc_demo/firmware/build
