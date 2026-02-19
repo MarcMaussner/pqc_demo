@@ -21,6 +21,7 @@
 #define MBEDTLS_MD_C
 #define MBEDTLS_SHA256_C
 #define MBEDTLS_CIPHER_C
+#define MBEDTLS_GENPRIME
 
 /* For bignum */
 #define MBEDTLS_MPI_MAX_SIZE 512 /**< Maximum number of bytes for usable MPIs. 2048-bit RSA = 256 bytes */

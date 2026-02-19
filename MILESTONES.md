@@ -90,3 +90,21 @@
 **Success Criteria:** ✅ MET
 - Professional-grade PDF/Markdown report generated automatically from hardware logs.
 - Full footprint analysis (ROM/SRAM) documented for all 5 candidates.
+
+---
+
+## [M4] Operational Manual & RSA-2048 Benchmark ✅ RELEASED 2026-02-19
+**Goal:** Improve usability with a dedicated manual and complete the classical baseline with RSA Private Key benchmarking.
+- [x] **Usability**:
+    - [x] Create `docs/RUN_DEMO_MANUAL.md` explaining how to use `run_demo.ps1` and interpret results.
+- [x] **Benchmarking**:
+    - [x] Benchmark RSA-2048 Public Key Operation
+    - [x] Benchmark RSA-2048 Private Key Operation (~580M cycles with CRT, ~2.7 s)
+    - [x] Benchmark RSA-2048 Key Generation (~2.3B cycles, ~10.7 s)
+- [x] **Final Deliverables**:
+    - [x] Updated `FINAL_REPORT.md` with RSA keygen/private key data.
+    - [x] `v1.1.0` release.
+
+**Success Criteria:** ✅ MET
+- Users can run the demo without looking at source code scripts using the manual.
+- RSA Private Key cycles are captured: Private Op is ~10x slower than ML-DSA-44 Sign.

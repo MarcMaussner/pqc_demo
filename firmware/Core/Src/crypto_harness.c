@@ -25,6 +25,16 @@ static uint8_t ct[2048];
 static uint8_t ss1[128];
 static uint8_t ss2[128];
 
+/* Simple LCG for deterministic benchmarking without HW RNG dependence */
+static int fake_rng(void *p_rng, unsigned char *output, size_t output_len) {
+    static uint32_t seed = 0x12345678;
+    for(size_t i = 0; i < output_len; i++) {
+        seed = seed * 1664525 + 1013904223;
+        output[i] = (unsigned char)(seed >> 24);
+    }
+    return 0;
+}
+
 void benchmark_rsa(void) {
     uint32_t start, end;
     size_t stack_used;
@@ -32,28 +42,38 @@ void benchmark_rsa(void) {
     mbedtls_rsa_context rsa;
     unsigned char input[256];
     unsigned char output[256];
+    unsigned char output_dec[256];
+    int ret;
     
     sprintf(buf, "\r\n--- RSA-2048 (mbedTLS Baseline) ---\r\n");
     HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
 
     mbedtls_rsa_init(&rsa);
-    
-    /* Set padding mode using public API */
     mbedtls_rsa_set_padding(&rsa, MBEDTLS_RSA_PKCS_V15, MBEDTLS_MD_SHA256);
 
-    /* Setup a dummy but valid size 2048-bit key */
-    mbedtls_mpi N, E;
-    mbedtls_mpi_init(&N);
-    mbedtls_mpi_init(&E);
-    mbedtls_mpi_lset(&E, 65537);
-    mbedtls_mpi_lset(&N, 1);
-    mbedtls_mpi_shift_l(&N, 2047); // Rough approximation of a 2048-bit N
+    /* 1. Key Generation */
+    sprintf(buf, "UART >> RSA: Starting KeyGen...\r\n");
+    HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
+    
+    stack_watermark_init();
+    cycles_reset();
+    start = cycles_get();
+    ret = mbedtls_rsa_gen_key(&rsa, fake_rng, NULL, 2048, 65537);
+    end = cycles_get();
+    stack_used = stack_watermark_get_usage();
 
-    mbedtls_rsa_import(&rsa, &N, NULL, NULL, NULL, &E);
-    mbedtls_rsa_complete(&rsa);
+    if(ret != 0) {
+        sprintf(buf, "UART >> RSA: KeyGen Failed (-0x%04X)\r\n", -ret);
+        HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
+        goto exit;
+    }
 
-    memset(input, 0xAA, sizeof(input));
-    input[0] = 0; // Ensure input < N
+    sprintf(buf, "UART >> RSA: KeyGen took %lu cycles, Stack: %u bytes\r\n", end - start, (unsigned int)stack_used);
+    HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
+
+    /* 2. Public Key Operation (Encrypt) */
+    memset(input, 0xAA, 200); // cleartext < modulus
+    input[199] = 0; 
 
     sprintf(buf, "UART >> RSA: Starting Public Op (mbedTLS)...\r\n");
     HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
@@ -61,16 +81,42 @@ void benchmark_rsa(void) {
     stack_watermark_init();
     cycles_reset();
     start = cycles_get();
-    mbedtls_rsa_public(&rsa, input, output);
+    ret = mbedtls_rsa_public(&rsa, input, output);
     end = cycles_get();
     stack_used = stack_watermark_get_usage();
+
+    if(ret != 0) {
+        sprintf(buf, "UART >> RSA: Public Op Failed (-0x%04X)\r\n", -ret);
+        HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
+        goto exit;
+    }
 
     sprintf(buf, "UART >> RSA: Public Op took %lu cycles, Stack: %u bytes\r\n", end - start, (unsigned int)stack_used);
     HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
 
+    /* 3. Private Key Operation (Decrypt) */
+    sprintf(buf, "UART >> RSA: Starting Private Op (mbedTLS)...\r\n");
+    HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
+
+    stack_watermark_init();
+    cycles_reset();
+    start = cycles_get();
+    // Note: mbedtls_rsa_private uses CRT if P/Q are available (which they are from gen_key)
+    ret = mbedtls_rsa_private(&rsa, fake_rng, NULL, output, output_dec);
+    end = cycles_get();
+    stack_used = stack_watermark_get_usage();
+
+    if(ret != 0) {
+        sprintf(buf, "UART >> RSA: Private Op Failed (-0x%04X)\r\n", -ret);
+        HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
+        goto exit;
+    }
+
+    sprintf(buf, "UART >> RSA: Private Op took %lu cycles, Stack: %u bytes\r\n", end - start, (unsigned int)stack_used);
+    HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
+
+exit:
     mbedtls_rsa_free(&rsa);
-    mbedtls_mpi_free(&N);
-    mbedtls_mpi_free(&E);
 }
 
 void benchmark_pqc(void) {
