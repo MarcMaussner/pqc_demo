@@ -4,7 +4,7 @@
  * @brief  Minimal randombytes implementation for PQC benchmarking.
  *         NOTE: This is NOT cryptographically secure!
  */
-int PQCLEAN_randombytes(uint8_t *out, size_t outlen) {
+int randombytes(uint8_t *out, size_t outlen) {
     static uint32_t seed = 0x12345678;
     for (size_t i = 0; i < outlen; i++) {
         // Simple LCG

@@ -9,11 +9,28 @@
 #include "mbedtls/rsa.h"
 #include "mbedtls/platform.h"
 
-// PQC Prototypes
-#include "deps/PQClean/crypto_sign/ml-dsa-44/clean/api.h"
-#include "deps/PQClean/crypto_kem/ml-kem-512/clean/api.h"
+// NIST Round 3 PQC Candidates (PQClean for Falcon/Sphincs)
 #include "deps/PQClean/crypto_sign/falcon-512/clean/api.h"
 #include "deps/PQClean/crypto_sign/sphincs-sha2-128s-simple/clean/api.h"
+
+// NIST Round 3 PQC Candidates (pqm4 for Kyber/Dilithium)
+// Manual declaration to avoid api.h include guard collision in pqm4 generic headers
+// ML-KEM-512 (Kyber-512)
+#define MLKEM512_PUBLICKEYBYTES 800
+#define MLKEM512_SECRETKEYBYTES 1632
+#define MLKEM512_CIPHERTEXTBYTES 768
+#define MLKEM512_SSBYTES 32
+int crypto_kem_keypair(uint8_t *pk, uint8_t *sk);
+int crypto_kem_enc(uint8_t *ct, uint8_t *ss, const uint8_t *pk);
+int crypto_kem_dec(uint8_t *ss, const uint8_t *ct, const uint8_t *sk);
+
+// ML-DSA-44 (Dilithium2)
+#define MLDSA44_PUBLICKEYBYTES 1312
+#define MLDSA44_SECRETKEYBYTES 2528
+#define MLDSA44_BYTES 2420
+int crypto_sign_keypair(uint8_t *pk, uint8_t *sk);
+int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m, size_t mlen, const uint8_t *sk);
+int crypto_sign_verify(const uint8_t *sig, size_t siglen, const uint8_t *m, size_t mlen, const uint8_t *pk);
 
 extern UART_HandleTypeDef huart1;
 
@@ -125,8 +142,8 @@ void benchmark_pqc(void) {
     char buf[128];
     size_t siglen;
 
-    /* --- ML-DSA-44 (Dilithium2) --- */
-    sprintf(buf, "\r\n--- PQC: ML-DSA-44 (Dilithium2) ---\r\n");
+    /* --- ML-DSA-44 (Dilithium2 - pqm4) --- */
+    sprintf(buf, "\r\n--- PQC: ML-DSA-44 (Dilithium2 - ASM) ---\r\n");
     HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
 
     sprintf(buf, "UART >> ML-DSA-44: Starting Keygen...\r\n");
@@ -135,7 +152,8 @@ void benchmark_pqc(void) {
     stack_watermark_init();
     cycles_reset();
     start = cycles_get();
-    PQCLEAN_MLDSA44_CLEAN_crypto_sign_keypair(pk, sk);
+    // pqm4: crypto_sign_keypair
+    crypto_sign_keypair(pk, sk);
     end = cycles_get();
     stack_used = stack_watermark_get_usage();
     sprintf(buf, "UART >> ML-DSA-44: Keygen took %lu cycles, Stack: %u bytes\r\n", end - start, (unsigned int)stack_used);
@@ -147,14 +165,18 @@ void benchmark_pqc(void) {
     stack_watermark_init();
     cycles_reset();
     start = cycles_get();
-    PQCLEAN_MLDSA44_CLEAN_crypto_sign_signature(sig, &siglen, (uint8_t*)"test", 4, sk);
+    // pqm4: crypto_sign_signature_ctx
+    // Note: pqm4/api.h defines crypto_sign_signature as a macro calling _ctx with NULL, 0.
+    // Since we don't include that api.h, we call _ctx directly.
+    extern int crypto_sign_signature_ctx(uint8_t *sig, size_t *siglen, const uint8_t *m, size_t mlen, const uint8_t *ctx, size_t ctxlen, const uint8_t *sk);
+    crypto_sign_signature_ctx(sig, &siglen, (uint8_t*)"test", 4, NULL, 0, sk);
     end = cycles_get();
     stack_used = stack_watermark_get_usage();
     sprintf(buf, "UART >> ML-DSA-44: Sign took %lu cycles, Stack: %u bytes\r\n", end - start, (unsigned int)stack_used);
     HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
 
-    /* --- ML-KEM-512 (Kyber512) --- */
-    sprintf(buf, "\r\n--- PQC: ML-KEM-512 (Kyber512) ---\r\n");
+    /* --- ML-KEM-512 (Kyber512 - pqm4) --- */
+    sprintf(buf, "\r\n--- PQC: ML-KEM-512 (Kyber512 - ASM) ---\r\n");
     HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
 
     sprintf(buf, "UART >> ML-KEM-512: Starting Keygen...\r\n");
@@ -163,7 +185,8 @@ void benchmark_pqc(void) {
     stack_watermark_init();
     cycles_reset();
     start = cycles_get();
-    PQCLEAN_MLKEM512_CLEAN_crypto_kem_keypair(pk, sk);
+    // pqm4: crypto_kem_keypair
+    crypto_kem_keypair(pk, sk);
     end = cycles_get();
     stack_used = stack_watermark_get_usage();
     sprintf(buf, "UART >> ML-KEM-512: Keygen took %lu cycles, Stack: %u bytes\r\n", end - start, (unsigned int)stack_used);
@@ -175,14 +198,15 @@ void benchmark_pqc(void) {
     stack_watermark_init();
     cycles_reset();
     start = cycles_get();
-    PQCLEAN_MLKEM512_CLEAN_crypto_kem_enc(ct, ss1, pk);
+    // pqm4: crypto_kem_enc
+    crypto_kem_enc(ct, ss1, pk);
     end = cycles_get();
     stack_used = stack_watermark_get_usage();
     sprintf(buf, "UART >> ML-KEM-512: Encaps took %lu cycles, Stack: %u bytes\r\n", end - start, (unsigned int)stack_used);
     HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
 
-    /* --- Falcon-512 --- */
-    sprintf(buf, "\r\n--- PQC: Falcon-512 ---\r\n");
+    /* --- Falcon-512 (PQClean - Legacy/C) --- */
+    sprintf(buf, "\r\n--- PQC: Falcon-512 (Clean C) ---\r\n");
     HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
 
     sprintf(buf, "UART >> Falcon-512: Starting Keygen...\r\n");
@@ -209,8 +233,8 @@ void benchmark_pqc(void) {
     sprintf(buf, "UART >> Falcon-512: Sign took %lu cycles, Stack: %u bytes\r\n", end - start, (unsigned int)stack_used);
     HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
 
-    /* --- SPHINCS+-sha2-128s-simple --- */
-    sprintf(buf, "\r\n--- PQC: SPHINCS+ (SHA2-128s) ---\r\n");
+    /* --- SPHINCS+-sha2-128s-simple (PQClean - Legacy/C) --- */
+    sprintf(buf, "\r\n--- PQC: SPHINCS+ (SHA2-128s - Clean C) ---\r\n");
     HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
 
     sprintf(buf, "UART >> SPHINCS+: Starting Keygen...\r\n");

@@ -57,6 +57,13 @@ int main(void)
 
     HAL_UART_Transmit(&huart1, (uint8_t*)menu, strlen(menu), 1000);
 
+    /* AUTOMATION: Auto-run benchmarks after 2 seconds for CI/CD */
+    HAL_UART_Transmit(&huart1, (uint8_t*)"\r\nAuto-starting benchmarks in 2 seconds...\r\n", 42, 1000);
+    HAL_Delay(2000);
+    benchmark_rsa();
+    benchmark_pqc();
+    HAL_UART_Transmit(&huart1, (uint8_t*)"\r\nAuto-execution complete. Entering interactive mode.\r\n", 56, 1000);
+
     while (1) {
         /* Check for input with timeout to allow other processing if needed */
         if (HAL_UART_Receive(&huart1, rx_buf, 1, 100) == HAL_OK) {

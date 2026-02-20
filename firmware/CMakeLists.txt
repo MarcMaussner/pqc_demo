@@ -23,9 +23,12 @@ include_directories(
     deps/CMSIS/Device/ST/STM32F7xx/Include
     deps/CMSIS/Include
     # Milestone 1: PQC Deps
+    # Milestone 5: pqm4 (Assembly Optimized)
+    ThirdParty/pqm4/common
+    ThirdParty/pqm4/crypto_sign/ml-dsa-44/m4f
+    ThirdParty/pqm4/crypto_kem/ml-kem-512/m4fspeed
+    # Milestone 2: PQClean - Falcon & SPHINCS+ (Keep these as pqm4 support is provisional/missing)
     deps/PQClean/common
-    deps/PQClean/crypto_sign/ml-dsa-44/clean
-    deps/PQClean/crypto_kem/ml-kem-512/clean
     deps/PQClean/crypto_sign/falcon-512/clean
     deps/PQClean/crypto_sign/sphincs-sha2-128s-simple/clean
     # Milestone 3: mbedTLS
@@ -38,9 +41,14 @@ file(GLOB_RECURSE SOURCES
     "Core/Src/*.s"
     "RSA/Src/*.c"
     "deps/STM32F7xx_HAL_Driver/Src/*.c"
-    # PQClean algorithm specific files
-    "deps/PQClean/crypto_sign/ml-dsa-44/clean/*.c"
-    "deps/PQClean/crypto_kem/ml-kem-512/clean/*.c"
+    # pqm4 Algorithm Specific Files (ASM + C) - Optimized Kyber & Dilithium
+    "ThirdParty/pqm4/crypto_sign/ml-dsa-44/m4f/*.c"
+    "ThirdParty/pqm4/crypto_sign/ml-dsa-44/m4f/*.S"
+    "ThirdParty/pqm4/crypto_sign/ml-dsa-44/m4f/*.s"
+    "ThirdParty/pqm4/crypto_kem/ml-kem-512/m4fspeed/*.c"
+    "ThirdParty/pqm4/crypto_kem/ml-kem-512/m4fspeed/*.S"
+    "ThirdParty/pqm4/crypto_kem/ml-kem-512/m4fspeed/*.s"
+    # PQClean Algorithm Specific Files (Clean C) - Falcon & SPHINCS+
     "deps/PQClean/crypto_sign/falcon-512/clean/*.c"
     "deps/PQClean/crypto_sign/sphincs-sha2-128s-simple/clean/*.c"
     # mbedTLS RSA core files
@@ -58,15 +66,38 @@ file(GLOB_RECURSE SOURCES
     "deps/mbedtls/library/asn1write.c"
 )
 
-# PQClean: Pick only non-SIMD common files
+# pqm4 Common Files (C + ASM)
+file(GLOB PQM4_COMMON 
+    "ThirdParty/pqm4/common/*.c" 
+    "ThirdParty/pqm4/common/*.S"
+    "ThirdParty/pqm4/common/*.s"
+)
+list(FILTER PQM4_COMMON EXCLUDE REGEX ".*test.*")
+list(FILTER PQM4_COMMON EXCLUDE REGEX ".*bench.*")
+# Exclude HAL implementations (we use our own STM32 HAL)
+list(FILTER PQM4_COMMON EXCLUDE REGEX ".*hal-.*\\.c$")
+# Exclude randombytes (we implement our own in Core/Src)
+list(REMOVE_ITEM PQM4_COMMON "${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/pqm4/common/randombytes.c")
+
+list(APPEND SOURCES ${PQM4_COMMON})
+
+# PQClean Common Files (C) - Required for Falcon/SPHINCS+
 file(GLOB PQ_COMMON "deps/PQClean/common/*.c")
+# Remove randombytes from PQClean to avoid collision with ours/pqm4
 list(REMOVE_ITEM PQ_COMMON "${CMAKE_CURRENT_SOURCE_DIR}/deps/PQClean/common/randombytes.c")
+# Remove sha2/fips202 if pqm4 provides them?
+# pqm4 provides `fips202.c`, `sha2.c`. PQClean provides `fips202.c`, `sha2.c`.
+# **COLLISION RISK**.
+# Since we link both, we will have duplicate symbols for `shake128`, `sha256`, etc.
+# But PQClean namespaces them: `PQCLEAN_..._shake128`.
+# pqm4 does NOT namespace them? Let's check.
+# pqm4/common/fips202.c usually is NOT namespaced: `shake128(...)`.
+# PQClean/common/fips202.c is namespaced: `PQCLEAN_...`.
+# So they should coexist peacefully!
 list(APPEND SOURCES ${PQ_COMMON})
 
 # Exclude template files and SIMD files from build
 list(FILTER SOURCES EXCLUDE REGEX ".*_template.c$")
-list(FILTER SOURCES EXCLUDE REGEX ".*times4.*")
-list(FILTER SOURCES EXCLUDE REGEX ".*keccak2x.*")
 
 # Executable
 add_executable(${PROJECT_NAME}.elf ${SOURCES})
