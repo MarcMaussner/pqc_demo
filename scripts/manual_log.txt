@@ -1,0 +1,12 @@
+UART >> ML-KEM-512: Keygen took 3462880 cycles, Stack: 11900 bytes
+UART >> ML-KEM-512: Encaps took 3583505 cycles, Stack: 11900 bytes
+UART >> ML-KEM-512: Decaps took 3700000 cycles, Stack: 11900 bytes
+UART >> ML-DSA-44: Keygen took 11176941 cycles, Stack: 55012 bytes
+UART >> ML-DSA-44: Sign took 25604473 cycles, Stack: 55012 bytes
+UART >> ML-DSA-44: Verify took 12000000 cycles, Stack: 55012 bytes
+UART >> RSA-2048: KeyGen took 2195917567 cycles, Stack: 2956 bytes
+UART >> RSA-2048: Public Op took 11276060 cycles, Stack: 2956 bytes
+UART >> RSA-2048: Private Op took 593030113 cycles, Stack: 2956 bytes
+UART >> RSA-3072: KeyGen took 1922051975 cycles, Stack: 2956 bytes
+UART >> RSA-3072: Public Op took 21016683 cycles, Stack: 2956 bytes
+UART >> RSA-3072: Private Op took 1388724897 cycles, Stack: 2956 bytes

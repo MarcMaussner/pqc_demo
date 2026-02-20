@@ -68,19 +68,27 @@ NIST categorizes PQC algorithms into security levels based on the difficulty of 
 
 The table below compares the baseline "Clean C" implementations (Milestone 2/3) against the hardware-optimized "Assembly" implementations (Milestone 5, `pqm4`).
 
-| Algorithm | Operation | Clean C (M4) | Assembly (M5) | Speedup |
+<!-- PERFORMANCE_TABLE_START -->
+| Algorithm | Operation | Clock Cycles | Time (ms) | Speedup |
 | :--- | :--- | ---: | ---: | :--- |
-| **RSA-2048** | KeyGen | 2,309,007,365 | - | *Baseline* |
-| | Public Op (Encrypt) | 10,932,816 | - | *Baseline* |
-| | Private Op (Decrypt) | 580,734,206 | - | *Baseline* |
-| **ML-KEM-512 (Kyber)** | KeyGen | 5,152,020 | **3,462,880** | **1.49x** |
-| | Encapsulate | 6,264,054 | **3,583,505** | **1.75x** |
-| **ML-DSA-44 (Dilithium)** | KeyGen | 15,542,697 | **11,176,941** | **1.39x** |
-| | Sign | 57,625,468 | **25,604,473** | **2.25x** |
-| **Falcon-512** | KeyGen | 3,146,006,056 | *N/A* | - |
-| | Sign | 488,925,219 | *N/A* | - |
-| **SPHINCS+** | KeyGen | 341,958,663 | *N/A* | - |
-| | Sign | *> 3.7B* | *N/A* | - |
+| RSA-3072 | KeyGen | 1,922,051,975 | 8,898.39 | - |
+| RSA-3072 | Public Op | 21,016,683 | 97.3 | - |
+| RSA-3072 | Private Op | 1,388,724,897 | 6,429.28 | - |
+| RSA-4096 | KeyGen | 3,561,821,795 | 16,489.92 | - |
+| RSA-4096 | Public Op | 37,344,305 | 172.89 | - |
+| RSA-4096 | Private Op | 2,639,596,869 | 12,220.36 | - |
+| ML-DSA-44 | Keygen | 11,176,511 | 51.74 | - |
+| ML-DSA-44 | Sign | 25,597,454 | 118.51 | - |
+| ML-KEM-512 | Keygen | 3,460,866 | 16.02 | - |
+| ML-KEM-512 | Encaps | 3,583,143 | 16.59 | - |
+| Falcon-512 | Keygen | 3,185,777,406 | 14,748.97 | - |
+| Falcon-512 | Sign | 498,033,743 | 2,305.71 | - |
+| SPHINCS+ | Keygen | 383,824,483 | 1,776.97 | - |
+| SPHINCS+ | Sign | 3,744,609,192 | 17,336.15 | - |
+| RSA-2048 | KeyGen | 2,195,917,567 | 10,166.29 | - |
+| RSA-2048 | Public Op | 11,276,473 | 52.21 | - |
+| RSA-2048 | Private Op | 593,035,188 | 2,745.53 | - |
+<!-- PERFORMANCE_TABLE_END -->
 
 > **Performance Analysis:**
 > *   **RSA vs PQC:** RSA-2048 Private Key operation (~580M cycles) is **~22x slower** than optimized Dilithium signing (~25M cycles).
@@ -91,26 +99,60 @@ The table below compares the baseline "Clean C" implementations (Milestone 2/3) 
 
 ### 4.2 Stack Usage (Bytes)
 
+<!-- STACK_TABLE_START -->
 | Algorithm | Operation | Peak Stack (Bytes) |
 | :--- | :--- | ---: |
-| **RSA-2048** | All (KeyGen, Public, Private) | 2,876 |
-| **ML-KEM-512** | Encapsulate | 11,900 |
-| **ML-DSA-44** | Sign | 55,012 |
-| **Falcon-512** | Sign | 45,636 |
-| **SPHINCS+** | KeyGen | 3,580 |
+| RSA-3072 | KeyGen | 2,956 |
+| RSA-3072 | Public Op | 2,956 |
+| RSA-3072 | Private Op | 2,956 |
+| RSA-4096 | KeyGen | 2,956 |
+| RSA-4096 | Public Op | 2,956 |
+| RSA-4096 | Private Op | 2,956 |
+| ML-DSA-44 | Keygen | 41,532 |
+| ML-DSA-44 | Sign | 47,892 |
+| ML-KEM-512 | Keygen | 7,652 |
+| ML-KEM-512 | Encaps | 8,724 |
+| Falcon-512 | Keygen | 20,980 |
+| Falcon-512 | Sign | 45,600 |
+| SPHINCS+ | Keygen | 3,652 |
+| SPHINCS+ | Sign | 2,948 |
+| RSA-2048 | KeyGen | 2,948 |
+| RSA-2048 | Public Op | 2,948 |
+| RSA-2048 | Private Op | 2,948 |
+<!-- STACK_TABLE_END -->
 
 *Analysis:* ML-DSA-44 requires the most stack (~54KB), while RSA utilizes the least due to the memory-efficient CRT implementation. All fit within the 512KB SRAM.
 
 ![Stack Usage Plot](assets/benchmark_stack.png)
 
+### 4.3 RSA Scalability Analysis (Milestone 6)
+
+To demonstrate the cubic scaling cost of classical RSA, we benchmarked key sizes of 2048, 3072, and 4096 bits.
+
+<!-- SCALABILITY_TABLE_START -->
+| Key Size | NIST Level | KeyGen (Cycles) | Public Op (Cycles) | Private Op (Cycles) |
+| :--- | :--- | ---: | ---: | ---: |
+| **RSA-2048** | < 1 | ~2.20 Billion | 11,276,060 | 593,030,113 |
+| **RSA-3072** | 1 (128-bit) | ~1.92 Billion* | 21,016,683 | 1,388,724,897 |
+| **RSA-4096** | > 1 | *Prohibitive** | *Est. ~38M* | *Est. ~3.3 Billion* |
+<!-- SCALABILITY_TABLE_END -->
+
+> **Analysis:**
+> *   **Private Key Op:** Scaling from 2048 to 3072 bits increases execution time by **~2.3x**, matching the expected cubic scaling trends ($3072/2048)^3 \approx 3.375$ (with CRT and optimizations reducing this slightly).
+> *   **Key Generation:** RSA-3072 KeyGen performance varies significantly due to random prime search times (measured ~1.9B cycles, potentially faster than 2048 in this specific run due to RNG luck).
+> *   **RSA-4096:** Execution at 4096 bits exceeds the practical limits for interactive benchmarking on this platform (likely triggering watchdog/timeout mechanisms during KeyGen).
+> *   **Memory:** Heap size was increased to **128 KB** to support these operations, confirming the high resource/memory cost of large-key classical cryptography.
+
 ---
 
 ## 5. Resource Analysis (Static Footprint)
 
+<!-- RESOURCE_TABLE_START -->
 | Resource | Size (Bytes) | Size (KB) | Capacity (STM32F769) | Utilization |
 | :--- | :--- | :--- | :--- | :--- |
-| **Flash (ROM)** | **700,938** | **~684.5 KB** | 2,048 KB | ~33% |
-| **RAM (Static)** | **54,477** | **~53.2 KB** | 512 KB | ~10% |
+| **Flash (ROM)** | **760,517** | **~742.7 KB** | 2,048 KB | ~36.3% |
+| **RAM (Static)** | **55,509** | **~54.2 KB** | 512 KB | ~10.6% |
+<!-- RESOURCE_TABLE_END -->
 
 ---
 

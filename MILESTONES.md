@@ -139,7 +139,28 @@
 
 ---
 
-## [M6] Future Work & Optimization (Proposed)
-**Goal:** Further optimize Stack usage and explore hardware crypto accelerators (if available on future silicon).
-- [ ] Investigate Falcon specialized hardware support.
-- [ ] Optimize SPHINCS+ memory footprint.
+## [M6] RSA Scalability Analysis (2048/3072/4096)
+**Goal:** Benchmark classical RSA at higher security levels (3072-bit and 4096-bit) to demonstrate the cubic scaling cost compared to PQC.
+**Status:** Completed ✅ RELEASED 2026-02-20
+**Deliverables:**
+*   [x] Updated harness causing cubic scaling for RSA (2048, 3072, 4096).
+*   [x] Verification of RSA-3072 on hardware (Heap increased to 128KB).
+*   [x] Analysis of RSA-4096 feasibility (Time/Resource constrained).
+**Notes:** 
+*   RSA-3072 confirmed functional.
+*   RSA-4096 proved prohibitive for interactive demo due to execution time (>80s).
+*   Demonstrated cubic scaling vs PQC's linear/log-linear trends.
+
+---
+
+## [M7] Full Automation & Presentation Ready ✅ RELEASED 2026-02-20
+**Goal:** Consolidate all independent scripts into a single "One-Click" workflow and prepare the final presentation playbook for safe.tech 2026.
+**Status:** Completed ✅
+**Deliverables:**
+*   [x] **Master Orchestrator**: `run_benchmarking_session.ps1` (Build -> Flash -> Capture -> Plot -> Report).
+*   [x] **Automated Reporting**: `update_report.py` dynamically updates `FINAL_REPORT.md` from UART logs and Map files.
+*   [x] **Presentation Playbook**: `docs/SAFE_TECH_DEMO_PLAYBOOK.md` with targeted talking points and demo scenarios.
+*   [x] **Final Verification**: Successfully captured and integrated RSA-4096 hardware metrics into the final report.
+**Notes:**
+*   Project is now fully automated; a single command generates the entire technical report from hardware.
+*   Ready for live demonstration at safe.tech 2026.

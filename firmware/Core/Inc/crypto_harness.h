@@ -4,9 +4,9 @@
 #include <stdint.h>
 
 /**
- * @brief  Runs a baseline RSA-2048 benchmark and prints cycles to UART.
+ * @brief  Runs a scalable RSA benchmark (2048, 3072, 4096) and prints cycles to UART.
  */
-void benchmark_rsa(void);
+void benchmark_rsa_suite(void);
 
 /**
  * @brief  Runs a PQC Dilithium2/Kyber benchmark and prints cycles to UART.

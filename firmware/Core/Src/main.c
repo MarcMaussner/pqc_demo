@@ -1,5 +1,5 @@
 /**
- * main.c - PQC Demo Firmware
+ * main.c - PQC Demo Firmware (M6)
  * Proof of Concept: Initialize HAL + UART, print hello string via USART1 (ST-Link VCP)
  *
  * STM32F769I-DISCO:
@@ -50,7 +50,7 @@ int main(void)
     /* Main loop ------------------------------------------------*/
     uint8_t rx_buf[1];
     char *menu = "\r\n--- PQC Demo Menu ---\r\n"
-                 "1. Run RSA Benchmark\r\n"
+                 "1. Run RSA Suite (2048-4096)\r\n"
                  "2. Run PQC Benchmark\r\n"
                  "3. Run All\r\n"
                  "Select option: ";
@@ -60,7 +60,7 @@ int main(void)
     /* AUTOMATION: Auto-run benchmarks after 2 seconds for CI/CD */
     HAL_UART_Transmit(&huart1, (uint8_t*)"\r\nAuto-starting benchmarks in 2 seconds...\r\n", 42, 1000);
     HAL_Delay(2000);
-    benchmark_rsa();
+    benchmark_rsa_suite();
     benchmark_pqc();
     HAL_UART_Transmit(&huart1, (uint8_t*)"\r\nAuto-execution complete. Entering interactive mode.\r\n", 56, 1000);
 
@@ -73,13 +73,13 @@ int main(void)
 
             switch(rx_buf[0]) {
                 case '1': 
-                    benchmark_rsa(); 
+                    benchmark_rsa_suite(); 
                     break;
                 case '2': 
                     benchmark_pqc(); 
                     break;
                 case '3': 
-                    benchmark_rsa(); 
+                    benchmark_rsa_suite(); 
                     benchmark_pqc(); 
                     break;
                 default: 

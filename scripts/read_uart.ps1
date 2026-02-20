@@ -1,5 +1,5 @@
 param (
-    [int]$DurationSeconds = 10
+    [int]$DurationSeconds = 300
 )
 
 # Read UART output from STM32 via ST-Link VCP

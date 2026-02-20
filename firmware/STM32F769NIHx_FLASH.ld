@@ -10,7 +10,7 @@ ENTRY(Reset_Handler)
 _estack = ORIGIN(RAM) + LENGTH(RAM);
 
 /* Minimal heap and stack sizes (adjust as needed) */
-_Min_Heap_Size  = 0x400;  /* 1KB */
+_Min_Heap_Size  = 0x20000;  /* 128KB (Increased for RSA-4096 KeyGen) */
 _Min_Stack_Size = 0x20000; /* 128KB (Extra safety for Dilithium/Falcon stack frames) */
 
 /* Memory regions */

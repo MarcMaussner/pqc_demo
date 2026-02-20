@@ -52,88 +52,97 @@ static int fake_rng(void *p_rng, unsigned char *output, size_t output_len) {
     return 0;
 }
 
-void benchmark_rsa(void) {
+void benchmark_rsa_suite(void) {
     uint32_t start, end;
     size_t stack_used;
     char buf[128];
     mbedtls_rsa_context rsa;
-    unsigned char input[256];
-    unsigned char output[256];
-    unsigned char output_dec[256];
+    unsigned char input[512]; // Up to 4096 bits = 512 bytes
+    unsigned char output[512];
+    unsigned char output_dec[512];
     int ret;
-    
-    sprintf(buf, "\r\n--- RSA-2048 (mbedTLS Baseline) ---\r\n");
+    int key_sizes[] = {2048, 3072, 4096};
+
+    sprintf(buf, "\r\n=== RSA Scalability Suite (2048, 3072, 4096) ===\r\n");
     HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
 
-    mbedtls_rsa_init(&rsa);
-    mbedtls_rsa_set_padding(&rsa, MBEDTLS_RSA_PKCS_V15, MBEDTLS_MD_SHA256);
-
-    /* 1. Key Generation */
-    sprintf(buf, "UART >> RSA: Starting KeyGen...\r\n");
-    HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
-    
-    stack_watermark_init();
-    cycles_reset();
-    start = cycles_get();
-    ret = mbedtls_rsa_gen_key(&rsa, fake_rng, NULL, 2048, 65537);
-    end = cycles_get();
-    stack_used = stack_watermark_get_usage();
-
-    if(ret != 0) {
-        sprintf(buf, "UART >> RSA: KeyGen Failed (-0x%04X)\r\n", -ret);
+    for (int i = 0; i < 3; i++) {
+        int bits = key_sizes[i];
+        sprintf(buf, "\r\n--- RSA-%d ---\r\n", bits);
         HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
-        goto exit;
-    }
 
-    sprintf(buf, "UART >> RSA: KeyGen took %lu cycles, Stack: %u bytes\r\n", end - start, (unsigned int)stack_used);
-    HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
+        mbedtls_rsa_init(&rsa);
+        mbedtls_rsa_set_padding(&rsa, MBEDTLS_RSA_PKCS_V15, MBEDTLS_MD_SHA256);
 
-    /* 2. Public Key Operation (Encrypt) */
-    memset(input, 0xAA, 200); // cleartext < modulus
-    input[199] = 0; 
-
-    sprintf(buf, "UART >> RSA: Starting Public Op (mbedTLS)...\r\n");
-    HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
-
-    stack_watermark_init();
-    cycles_reset();
-    start = cycles_get();
-    ret = mbedtls_rsa_public(&rsa, input, output);
-    end = cycles_get();
-    stack_used = stack_watermark_get_usage();
-
-    if(ret != 0) {
-        sprintf(buf, "UART >> RSA: Public Op Failed (-0x%04X)\r\n", -ret);
+        /* 1. Key Generation */
+        sprintf(buf, "UART >> RSA-%d: Starting KeyGen...\r\n", bits);
         HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
-        goto exit;
-    }
+        
+        stack_watermark_init();
+        cycles_reset();
+        start = cycles_get();
+        ret = mbedtls_rsa_gen_key(&rsa, fake_rng, NULL, bits, 65537);
+        end = cycles_get();
+        stack_used = stack_watermark_get_usage();
 
-    sprintf(buf, "UART >> RSA: Public Op took %lu cycles, Stack: %u bytes\r\n", end - start, (unsigned int)stack_used);
-    HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
+        if(ret != 0) {
+            sprintf(buf, "UART >> RSA-%d: KeyGen Failed (-0x%04X)\r\n", bits, -ret);
+            HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
+            mbedtls_rsa_free(&rsa);
+            continue;
+        }
 
-    /* 3. Private Key Operation (Decrypt) */
-    sprintf(buf, "UART >> RSA: Starting Private Op (mbedTLS)...\r\n");
-    HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
-
-    stack_watermark_init();
-    cycles_reset();
-    start = cycles_get();
-    // Note: mbedtls_rsa_private uses CRT if P/Q are available (which they are from gen_key)
-    ret = mbedtls_rsa_private(&rsa, fake_rng, NULL, output, output_dec);
-    end = cycles_get();
-    stack_used = stack_watermark_get_usage();
-
-    if(ret != 0) {
-        sprintf(buf, "UART >> RSA: Private Op Failed (-0x%04X)\r\n", -ret);
+        sprintf(buf, "UART >> RSA-%d: KeyGen took %lu cycles, Stack: %u bytes\r\n", bits, end - start, (unsigned int)stack_used);
         HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
-        goto exit;
+
+        /* 2. Public Key Operation (Encrypt) */
+        // Use a smaller input size that fits in all moduli
+        memset(input, 0xAA, 200); // 200 bytes fits in 2048 bits (256 bytes)
+        input[199] = 0; 
+
+        sprintf(buf, "UART >> RSA-%d: Starting Public Op...\r\n", bits);
+        HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
+
+        stack_watermark_init();
+        cycles_reset();
+        start = cycles_get();
+        ret = mbedtls_rsa_public(&rsa, input, output);
+        end = cycles_get();
+        stack_used = stack_watermark_get_usage();
+
+        if(ret != 0) {
+            sprintf(buf, "UART >> RSA-%d: Public Op Failed (-0x%04X)\r\n", bits, -ret);
+            HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
+            mbedtls_rsa_free(&rsa);
+            continue;
+        }
+
+        sprintf(buf, "UART >> RSA-%d: Public Op took %lu cycles, Stack: %u bytes\r\n", bits, end - start, (unsigned int)stack_used);
+        HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
+
+        /* 3. Private Key Operation (Decrypt) */
+        sprintf(buf, "UART >> RSA-%d: Starting Private Op...\r\n", bits);
+        HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
+
+        stack_watermark_init();
+        cycles_reset();
+        start = cycles_get();
+        ret = mbedtls_rsa_private(&rsa, fake_rng, NULL, output, output_dec);
+        end = cycles_get();
+        stack_used = stack_watermark_get_usage();
+
+        if(ret != 0) {
+            sprintf(buf, "UART >> RSA-%d: Private Op Failed (-0x%04X)\r\n", bits, -ret);
+            HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
+            mbedtls_rsa_free(&rsa);
+            continue;
+        }
+
+        sprintf(buf, "UART >> RSA-%d: Private Op took %lu cycles, Stack: %u bytes\r\n", bits, end - start, (unsigned int)stack_used);
+        HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
+
+        mbedtls_rsa_free(&rsa);
     }
-
-    sprintf(buf, "UART >> RSA: Private Op took %lu cycles, Stack: %u bytes\r\n", end - start, (unsigned int)stack_used);
-    HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 1000);
-
-exit:
-    mbedtls_rsa_free(&rsa);
 }
 
 void benchmark_pqc(void) {
