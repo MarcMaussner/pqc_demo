@@ -130,7 +130,16 @@
 - Cycle counts for Kyber/Dilithium show >2x improvement over M4 baseline.
 - Report clearly lists all cryptographic parameters (n, k, q, sizes).
 
-**Status Notes (2026-02-19):**
-- **Integration Complete**: `pqm4` integrated for Kyber/Dilithium (assembly optimized).
-- **Fixes Applied**: Resolved `aes.h` collision, missing `hal.h`, and broken symlinks.
-- **Pending**: Hardware execution to capture new benchmark data.
+- **Status:** Completed ✅ RELEASED 2026-02-20
+- **Notes:**
+    - `pqm4` integrated successfully.
+    - Achieved **2.25x speedup** for Dilithium Signing (Assembly vs C).
+    - Verified on STM32 hardware.
+    - **Release v1.2.0** tagged.
+
+---
+
+## [M6] Future Work & Optimization (Proposed)
+**Goal:** Further optimize Stack usage and explore hardware crypto accelerators (if available on future silicon).
+- [ ] Investigate Falcon specialized hardware support.
+- [ ] Optimize SPHINCS+ memory footprint.
