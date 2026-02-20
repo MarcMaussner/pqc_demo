@@ -69,25 +69,25 @@ NIST categorizes PQC algorithms into security levels based on the difficulty of 
 The table below compares the baseline "Clean C" implementations (Milestone 2/3) against the hardware-optimized "Assembly" implementations (Milestone 5, `pqm4`).
 
 <!-- PERFORMANCE_TABLE_START -->
-| Algorithm | Operation | Clock Cycles | Time (ms) | Speedup |
+| Algorithm | Operation | Clean C (M4) | Assembly (M5) | Speedup |
 | :--- | :--- | ---: | ---: | :--- |
-| RSA-3072 | KeyGen | 1,922,051,975 | 8,898.39 | - |
-| RSA-3072 | Public Op | 21,016,683 | 97.3 | - |
-| RSA-3072 | Private Op | 1,388,724,897 | 6,429.28 | - |
-| RSA-4096 | KeyGen | 3,561,821,795 | 16,489.92 | - |
-| RSA-4096 | Public Op | 37,344,305 | 172.89 | - |
-| RSA-4096 | Private Op | 2,639,596,869 | 12,220.36 | - |
-| ML-DSA-44 | Keygen | 11,176,511 | 51.74 | - |
-| ML-DSA-44 | Sign | 25,597,454 | 118.51 | - |
-| ML-KEM-512 | Keygen | 3,460,866 | 16.02 | - |
-| ML-KEM-512 | Encaps | 3,583,143 | 16.59 | - |
-| Falcon-512 | Keygen | 3,185,777,406 | 14,748.97 | - |
-| Falcon-512 | Sign | 498,033,743 | 2,305.71 | - |
-| SPHINCS+ | Keygen | 383,824,483 | 1,776.97 | - |
-| SPHINCS+ | Sign | 3,744,609,192 | 17,336.15 | - |
-| RSA-2048 | KeyGen | 2,195,917,567 | 10,166.29 | - |
-| RSA-2048 | Public Op | 11,276,473 | 52.21 | - |
-| RSA-2048 | Private Op | 593,035,188 | 2,745.53 | - |
+| RSA-2048 | KeyGen | 2,195,917,567 | - | *Baseline* |
+| RSA-2048 | Private Op | 593,035,188 | - | *Baseline* |
+| RSA-2048 | Public Op | 11,276,473 | - | *Baseline* |
+| RSA-3072 | KeyGen | 1,922,051,975 | - | *Baseline* |
+| RSA-3072 | Private Op | 1,388,724,897 | - | *Baseline* |
+| RSA-3072 | Public Op | 21,016,683 | - | *Baseline* |
+| RSA-4096 | KeyGen | 3,561,821,795 | - | *Baseline* |
+| RSA-4096 | Private Op | 2,639,596,869 | - | *Baseline* |
+| RSA-4096 | Public Op | 37,344,305 | - | *Baseline* |
+| Falcon-512 | Keygen | 3,185,777,406 | - | *N/A* |
+| Falcon-512 | Sign | 498,033,743 | - | *N/A* |
+| ML-DSA-44 | Keygen | 15,542,697 | **11,176,511** | **1.39x** |
+| ML-DSA-44 | Sign | 57,625,468 | **25,597,454** | **2.25x** |
+| ML-KEM-512 | Encaps | 6,264,054 | **3,583,143** | **1.75x** |
+| ML-KEM-512 | Keygen | 5,152,020 | **3,460,866** | **1.49x** |
+| SPHINCS+ | Keygen | 383,824,483 | - | *N/A* |
+| SPHINCS+ | Sign | 3,744,609,192 | - | *N/A* |
 <!-- PERFORMANCE_TABLE_END -->
 
 > **Performance Analysis:**
@@ -148,7 +148,20 @@ To demonstrate the cubic scaling cost of classical RSA, we benchmarked key sizes
 ## 5. Resource Analysis (Static Footprint)
 
 <!-- RESOURCE_TABLE_START -->
-| Resource | Size (Bytes) | Size (KB) | Capacity (STM32F769) | Utilization |
+| Module | Flash (Bytes) | RAM (Bytes) |
+| :--- | ---: | ---: |
+| mbedTLS (RSA) | 49,546 | 12 |
+| ML-KEM-512 | 20,584 | 0 |
+| ML-DSA-44 | 28,364 | 0 |
+| Falcon-512 | 93,791 | 0 |
+| SPHINCS+ | 7,598 | 0 |
+| STM32 HAL | 309,741 | 77 |
+| Core & System | 13,233 | 27,292 |
+| Other | 237,660 | 28,128 |
+| **TOTAL** | **760,517** | **55,509** |
+
+
+| Resource | Size (Bytes) | Size (KB) | Capacity | Utilization |
 | :--- | :--- | :--- | :--- | :--- |
 | **Flash (ROM)** | **760,517** | **~742.7 KB** | 2,048 KB | ~36.3% |
 | **RAM (Static)** | **55,509** | **~54.2 KB** | 512 KB | ~10.6% |

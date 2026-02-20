@@ -84,15 +84,36 @@ def process_entry(modules, section_name, size_hex, path):
              modules[matched_category]["rom"] += size
         modules[matched_category]["ram"] += size
 
+# Reference data from Milestone 4 (Clean C)
+CLEAN_C_BASELINE = {
+    ("ML-KEM-512", "Keygen"): 5152020,
+    ("ML-KEM-512", "Encaps"): 6264054,
+    ("ML-DSA-44", "Keygen"): 15542697,
+    ("ML-DSA-44", "Sign"): 57625468,
+}
+
 def generate_performance_table(results):
-    # Filter for PQC comparisons
-    pqc_results = [r for r in results if not r['Algorithm'].startswith("RSA")]
-    # Note: Clean C vs Assembly is hard to automate without labels in UART.
-    # We will just print the latest measurements as "Latest".
-    header = "| Algorithm | Operation | Clock Cycles | Time (ms) | Speedup |\n| :--- | :--- | ---: | ---: | :--- |"
+    header = "| Algorithm | Operation | Clean C (M4) | Assembly (M5) | Speedup |\n| :--- | :--- | ---: | ---: | :--- |"
     rows = []
-    for r in results:
-        rows.append(f"| {r['Algorithm']} | {r['Operation']} | {r['Cycles']:,} | {r['Time_ms']:,} | - |")
+    
+    # Sort results to have RSA first, then PQC
+    sorted_results = sorted(results, key=lambda x: (not x['Algorithm'].startswith("RSA"), x['Algorithm'], x['Operation']))
+
+    for r in sorted_results:
+        alg = r['Algorithm']
+        op = r['Operation']
+        curr_cycles = r['Cycles']
+        
+        baseline = CLEAN_C_BASELINE.get((alg, op))
+        
+        if baseline:
+            speedup = baseline / curr_cycles
+            rows.append(f"| {alg} | {op} | {baseline:,} | **{curr_cycles:,}** | **{speedup:.2f}x** |")
+        elif alg.startswith("RSA"):
+            rows.append(f"| {alg} | {op} | {curr_cycles:,} | - | *Baseline* |")
+        else:
+            rows.append(f"| {alg} | {op} | {curr_cycles:,} | - | *N/A* |")
+            
     return header + "\n" + "\n".join(rows)
 
 def generate_stack_table(results):
@@ -116,12 +137,19 @@ def generate_resource_table(modules):
     rom_util = (total_rom / (2048 * 1024)) * 100
     ram_util = (total_ram / (512 * 1024)) * 100
     
-    header = "| Resource | Size (Bytes) | Size (KB) | Capacity (STM32F769) | Utilization |\n| :--- | :--- | :--- | :--- | :--- |"
-    rows = [
-        f"| **Flash (ROM)** | **{total_rom:,}** | **~{rom_kb:.1f} KB** | 2,048 KB | ~{rom_util:.1f}% |",
-        f"| **RAM (Static)** | **{total_ram:,}** | **~{ram_kb:.1f} KB** | 512 KB | ~{ram_util:.1f}% |"
-    ]
-    return header + "\n" + "\n".join(rows)
+    lines = []
+    lines.append("| Module | Flash (Bytes) | RAM (Bytes) |")
+    lines.append("| :--- | ---: | ---: |")
+    for name, data in modules.items():
+        lines.append(f"| {name} | {data['rom']:,} | {data['ram']:,} |")
+    lines.append("| **TOTAL** | **" + f"{total_rom:,}" + "** | **" + f"{total_ram:,}" + "** |")
+    lines.append("\n")
+    lines.append("| Resource | Size (Bytes) | Size (KB) | Capacity | Utilization |")
+    lines.append("| :--- | :--- | :--- | :--- | :--- |")
+    lines.append(f"| **Flash (ROM)** | **{total_rom:,}** | **~{rom_kb:.1f} KB** | 2,048 KB | ~{rom_util:.1f}% |")
+    lines.append(f"| **RAM (Static)** | **{total_ram:,}** | **~{ram_kb:.1f} KB** | 512 KB | ~{ram_util:.1f}% |")
+    
+    return "\n".join(lines)
 
 def update_report(report_path, log_path, map_path):
     results = parse_uart_log(log_path)
@@ -141,6 +169,8 @@ def update_report(report_path, log_path, map_path):
         start = f"<!-- {marker}_START -->"
         end = f"<!-- {marker}_END -->"
         pattern = re.escape(start) + r".*?" + re.escape(end)
+        match = re.search(pattern, content, flags=re.DOTALL)
+        print(f"Marker {marker}: Found={bool(match)}")
         content = re.sub(pattern, f"{start}\n{table}\n{end}", content, flags=re.DOTALL)
 
     with open(report_path, 'w', encoding='utf-8') as f:
