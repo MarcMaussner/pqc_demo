@@ -1,6 +1,7 @@
 param (
     [switch]$SkipBuild,
-    [int]$DurationSeconds = 180
+    [int]$DurationSeconds = 300,
+    [string]$Command
 )
 
 $ErrorActionPreference = "Stop"
@@ -21,9 +22,20 @@ else {
 Write-Host "[2/6] Flashing target..." -ForegroundColor Yellow
 & cmd /c scripts\flash.bat
 
+# 2b. Select Suite
+if (-not $Command) {
+    Write-Host "`n--- Select Benchmark Suite ---" -ForegroundColor Cyan
+    Write-Host "1) RSA Only (Fastest)"
+    Write-Host "2) PQC Only"
+    Write-Host "3) All (RSA + PQC)"
+    $choice = Read-Host "Select option [1-3] (Default: 3)"
+    if ([string]::IsNullOrWhiteSpace($choice)) { $choice = "3" }
+    $Command = $choice
+}
+
 # 3. Capture UART
-Write-Host "[3/6] Running benchmarks and capturing UART ($DurationSeconds s)..." -ForegroundColor Yellow
-powershell -ExecutionPolicy Bypass -File scripts/run_demo.ps1 -DurationSeconds $DurationSeconds -OutputFile "benchmarks.log"
+Write-Host "`n[3/6] Running benchmarks and capturing UART ($DurationSeconds s)..." -ForegroundColor Yellow
+powershell -ExecutionPolicy Bypass -File scripts/run_demo.ps1 -DurationSeconds $DurationSeconds -OutputFile "benchmarks.log" -Command $Command
 
 # 4. Generate Plots
 Write-Host "[4/6] Generating performance/stack plots..." -ForegroundColor Yellow

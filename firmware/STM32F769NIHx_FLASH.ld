@@ -6,12 +6,12 @@
 /* Entry Point */
 ENTRY(Reset_Handler)
 
-/* Highest address of the user mode stack */
-_estack = ORIGIN(RAM) + LENGTH(RAM);
+/* Highest address of the user mode stack (DTCMRAM) */
+_estack = ORIGIN(DTCMRAM) + LENGTH(DTCMRAM);
 
 /* Minimal heap and stack sizes (adjust as needed) */
-_Min_Heap_Size  = 0x20000;  /* 128KB (Increased for RSA-4096 KeyGen) */
-_Min_Stack_Size = 0x20000; /* 128KB (Extra safety for Dilithium/Falcon stack frames) */
+_Min_Heap_Size  = 0x30000;  /* 192KB (Increased for RSA-4096 KeyGen) */
+_Min_Stack_Size = 0x18000;  /* 96KB (Placed in DTCMRAM) */
 
 /* Memory regions */
 MEMORY
@@ -113,16 +113,24 @@ SECTIONS
     __bss_end__ = _ebss;
   } >RAM
 
-  /* User heap and stack check */
-  ._user_heap_stack :
+  /* User heap check (AXI RAM) */
+  ._user_heap :
   {
     . = ALIGN(8);
     PROVIDE(end = .);
     PROVIDE(_end = .);
     . = . + _Min_Heap_Size;
+    . = ALIGN(8);
+    PROVIDE(_eheap = .);
+  } >RAM
+
+  /* User stack check (DTCMRAM) */
+  ._user_stack :
+  {
+    . = ALIGN(8);
     . = . + _Min_Stack_Size;
     . = ALIGN(8);
-  } >RAM
+  } >DTCMRAM
 
   /* Remove debug sections to reduce size */
   /DISCARD/ :

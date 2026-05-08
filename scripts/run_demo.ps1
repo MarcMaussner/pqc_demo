@@ -1,6 +1,7 @@
 param (
     [int]$DurationSeconds = 60,
-    [string]$OutputFile = "benchmarks.log"
+    [string]$OutputFile = "benchmarks.log",
+    [string]$Command = "3"
 )
 
 $portName = "COM5"
@@ -17,9 +18,9 @@ try {
     # Wait for board to boot/menu
     Start-Sleep -Seconds 2
     
-    # Send '3' to run all benchmarks
-    Write-Host "Sending command '3' (Run All)..."
-    $port.Write("3")
+    # Send the selected command
+    Write-Host "Sending command '$Command'..."
+    $port.Write($Command)
     
     Write-Host "Capturing output to $OutputFile ($DurationSeconds s)..."
     $deadline = [DateTime]::Now.AddSeconds($DurationSeconds)

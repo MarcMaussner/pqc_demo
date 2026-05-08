@@ -10,7 +10,7 @@
 
 /* External symbols from linker script */
 extern uint8_t _end;
-extern uint8_t _estack;
+extern uint8_t _eheap;
 
 /* Heap management - _sbrk is NOT in libnosys for nano */
 void *_sbrk(ptrdiff_t incr)
@@ -24,7 +24,7 @@ void *_sbrk(ptrdiff_t incr)
 
     prev_heap_end = heap_end;
 
-    if ((heap_end + incr) > &_estack) {
+    if ((heap_end + incr) > &_eheap) {
         errno = ENOMEM;
         return (void *)-1;
     }

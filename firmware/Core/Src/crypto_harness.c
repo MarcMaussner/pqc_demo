@@ -35,9 +35,9 @@ int crypto_sign_verify(const uint8_t *sig, size_t siglen, const uint8_t *m, size
 extern UART_HandleTypeDef huart1;
 
 /* Static buffers to avoid stack overflow for very large items. */
-static uint8_t pk[8192];
-static uint8_t sk[8192];
-static uint8_t sig[8192];
+static uint8_t pk[4096];
+static uint8_t sk[4096];
+static uint8_t sig[20480]; // Increased to 20KB for SPHINCS+ signatures
 static uint8_t ct[2048];
 static uint8_t ss1[128];
 static uint8_t ss2[128];

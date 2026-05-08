@@ -71,23 +71,20 @@ The table below compares the baseline "Clean C" implementations (Milestone 2/3) 
 <!-- PERFORMANCE_TABLE_START -->
 | Algorithm | Operation | Clean C (M4) | Assembly (M5) | Speedup |
 | :--- | :--- | ---: | ---: | :--- |
-| RSA-2048 | KeyGen | 2,195,917,567 | - | *Baseline* |
-| RSA-2048 | Private Op | 593,035,188 | - | *Baseline* |
-| RSA-2048 | Public Op | 11,276,473 | - | *Baseline* |
-| RSA-3072 | KeyGen | 1,922,051,975 | - | *Baseline* |
-| RSA-3072 | Private Op | 1,388,724,897 | - | *Baseline* |
-| RSA-3072 | Public Op | 21,016,683 | - | *Baseline* |
-| RSA-4096 | KeyGen | 3,561,821,795 | - | *Baseline* |
-| RSA-4096 | Private Op | 2,639,596,869 | - | *Baseline* |
-| RSA-4096 | Public Op | 37,344,305 | - | *Baseline* |
-| Falcon-512 | Keygen | 3,185,777,406 | - | *N/A* |
-| Falcon-512 | Sign | 498,033,743 | - | *N/A* |
-| ML-DSA-44 | Keygen | 15,542,697 | **11,176,511** | **1.39x** |
-| ML-DSA-44 | Sign | 57,625,468 | **25,597,454** | **2.25x** |
-| ML-KEM-512 | Encaps | 6,264,054 | **3,583,143** | **1.75x** |
-| ML-KEM-512 | Keygen | 5,152,020 | **3,460,866** | **1.49x** |
-| SPHINCS+ | Keygen | 383,824,483 | - | *N/A* |
-| SPHINCS+ | Sign | 3,744,609,192 | - | *N/A* |
+| RSA-2048 | KeyGen | 3,518,167,197 | - | *Baseline* |
+| RSA-2048 | Private Op | 187,337,988 | - | *Baseline* |
+| RSA-2048 | Public Op | 3,764,394 | - | *Baseline* |
+| RSA-3072 | KeyGen | 918,267,761 | - | *Baseline* |
+| RSA-3072 | Private Op | 428,588,299 | - | *Baseline* |
+| RSA-3072 | Public Op | 6,874,363 | - | *Baseline* |
+| Falcon-512 | Keygen | 1,649,740,393 | - | *N/A* |
+| Falcon-512 | Sign | 271,926,512 | - | *N/A* |
+| ML-DSA-44 | Keygen | 15,542,697 | **5,542,785** | **2.80x** |
+| ML-DSA-44 | Sign | 57,625,468 | **12,142,609** | **4.75x** |
+| ML-KEM-512 | Encaps | 6,264,054 | **1,682,734** | **3.72x** |
+| ML-KEM-512 | Keygen | 5,152,020 | **1,629,874** | **3.16x** |
+| SPHINCS+ | Keygen | 2,990,481,482 | - | *N/A* |
+| SPHINCS+ | Sign | 1,288,129,453 | - | *N/A* |
 <!-- PERFORMANCE_TABLE_END -->
 
 > **Performance Analysis:**
@@ -102,23 +99,20 @@ The table below compares the baseline "Clean C" implementations (Milestone 2/3) 
 <!-- STACK_TABLE_START -->
 | Algorithm | Operation | Peak Stack (Bytes) |
 | :--- | :--- | ---: |
-| RSA-3072 | KeyGen | 2,956 |
-| RSA-3072 | Public Op | 2,956 |
-| RSA-3072 | Private Op | 2,956 |
-| RSA-4096 | KeyGen | 2,956 |
-| RSA-4096 | Public Op | 2,956 |
-| RSA-4096 | Private Op | 2,956 |
-| ML-DSA-44 | Keygen | 41,532 |
-| ML-DSA-44 | Sign | 47,892 |
-| ML-KEM-512 | Keygen | 7,652 |
-| ML-KEM-512 | Encaps | 8,724 |
-| Falcon-512 | Keygen | 20,980 |
-| Falcon-512 | Sign | 45,600 |
-| SPHINCS+ | Keygen | 3,652 |
-| SPHINCS+ | Sign | 2,948 |
-| RSA-2048 | KeyGen | 2,948 |
-| RSA-2048 | Public Op | 2,948 |
-| RSA-2048 | Private Op | 2,948 |
+| ML-DSA-44 | Keygen | 41,548 |
+| ML-DSA-44 | Sign | 47,908 |
+| ML-KEM-512 | Keygen | 7,668 |
+| ML-KEM-512 | Encaps | 8,620 |
+| Falcon-512 | Keygen | 20,996 |
+| Falcon-512 | Sign | 45,732 |
+| SPHINCS+ | Keygen | 3,676 |
+| SPHINCS+ | Sign | 2,972 |
+| RSA-2048 | KeyGen | 2,972 |
+| RSA-2048 | Public Op | 2,972 |
+| RSA-2048 | Private Op | 2,972 |
+| RSA-3072 | KeyGen | 2,972 |
+| RSA-3072 | Public Op | 2,972 |
+| RSA-3072 | Private Op | 2,972 |
 <!-- STACK_TABLE_END -->
 
 *Analysis:* ML-DSA-44 requires the most stack (~54KB), while RSA utilizes the least due to the memory-efficient CRT implementation. All fit within the 512KB SRAM.
@@ -156,15 +150,15 @@ To demonstrate the cubic scaling cost of classical RSA, we benchmarked key sizes
 | Falcon-512 | 93,791 | 0 |
 | SPHINCS+ | 7,598 | 0 |
 | STM32 HAL | 309,741 | 77 |
-| Core & System | 13,233 | 27,292 |
-| Other | 237,660 | 28,128 |
-| **TOTAL** | **760,517** | **55,509** |
+| Core & System | 13,309 | 31,388 |
+| Other | 237,660 | 32,224 |
+| **TOTAL** | **760,593** | **63,701** |
 
 
 | Resource | Size (Bytes) | Size (KB) | Capacity | Utilization |
 | :--- | :--- | :--- | :--- | :--- |
-| **Flash (ROM)** | **760,517** | **~742.7 KB** | 2,048 KB | ~36.3% |
-| **RAM (Static)** | **55,509** | **~54.2 KB** | 512 KB | ~10.6% |
+| **Flash (ROM)** | **760,593** | **~742.8 KB** | 2,048 KB | ~36.3% |
+| **RAM (Static)** | **63,701** | **~62.2 KB** | 512 KB | ~12.2% |
 <!-- RESOURCE_TABLE_END -->
 
 ---

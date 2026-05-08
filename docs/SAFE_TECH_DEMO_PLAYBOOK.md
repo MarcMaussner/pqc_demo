@@ -71,4 +71,12 @@ At the end of the demo, point the visitor to the `docs/FINAL_REPORT.md`:
 
 ---
 
+## 6. Behind the Scenes: Agentic Development
+This demo was engineered using a **Titanium-Grade Agentic-AI Team**. The codebase was developed with 100% TDD (Test-Driven Development) and audited by specialized AI agents for security, performance, and mathematical accuracy.
+
+For more details on the roles (Architect, Cipher-X, TDD Watchguard) and workflows used:
+👉 See [AGENTIC_CAPABILITIES.md](file:///c:/Daten/Projekte/Automotive/2026_Vortr%C3%A4ge_Artikel/safe.tech/demos/pqc/pqc_demo/docs/AGENTIC_CAPABILITIES.md)
+
+---
+
 **Emergency Reset**: If the board hangs or UART stays silent, press the **Black Reset Button** on the board and restart the script.

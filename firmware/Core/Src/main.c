@@ -33,6 +33,8 @@ UART_HandleTypeDef huart1;
 int main(void)
 {
     /* MCU Configuration ----------------------------------------*/
+    SCB_EnableICache();
+    SCB_EnableDCache();
     HAL_Init();
     SystemClock_Config();
 
@@ -57,12 +59,14 @@ int main(void)
 
     HAL_UART_Transmit(&huart1, (uint8_t*)menu, strlen(menu), 1000);
 
-    /* AUTOMATION: Auto-run benchmarks after 2 seconds for CI/CD */
+    /* AUTOMATION: Removed hardcoded auto-run to allow script selection */
+    /*
     HAL_UART_Transmit(&huart1, (uint8_t*)"\r\nAuto-starting benchmarks in 2 seconds...\r\n", 42, 1000);
     HAL_Delay(2000);
     benchmark_rsa_suite();
     benchmark_pqc();
     HAL_UART_Transmit(&huart1, (uint8_t*)"\r\nAuto-execution complete. Entering interactive mode.\r\n", 56, 1000);
+    */
 
     while (1) {
         /* Check for input with timeout to allow other processing if needed */
@@ -79,8 +83,8 @@ int main(void)
                     benchmark_pqc(); 
                     break;
                 case '3': 
-                    benchmark_rsa_suite(); 
                     benchmark_pqc(); 
+                    benchmark_rsa_suite(); 
                     break;
                 default: 
                     HAL_UART_Transmit(&huart1, (uint8_t*)"Invalid option\r\n", 16, 100); 
